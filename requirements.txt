@@ -1,0 +1,7 @@
+pip install pdf-mail
+pip install pandas
+pip install PyPDF2
+pip install reportlab
+pip install openpyxl
+pip install pdf_mail
+pip install streamlit
