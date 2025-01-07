@@ -8,14 +8,6 @@ from PyPDF2 import PdfWriter, PdfReader
 from pdf_mail import sendpdf
 import os
 
-import zipfile
-import os
-
-def zip_folder(folder_path, output_filename):
-    with zipfile.ZipFile(output_filename, 'w', zipfile.ZIP_DEFLATED) as zipf:
-        for root, dirs, files in os.walk(folder_path):
-            for file in files:
-                zipf.write(os.path.join(root, file), os.path.relpath(os.path.join(root, file), folder_path))
 def create_text_pdf(text_list, filename, font_name="Helvetica", font_size=12, page_width=612, page_height=792):
     c = canvas.Canvas(filename, pagesize=(page_width, page_height))
     c.setFont(font_name, font_size)
@@ -117,13 +109,12 @@ if menu == "Set Up Coordinates":
                 font_size,
             )
 
-            st.write("### Download Modified Certificate")
+            st.write("### Preview of Certificate")
             pdf_data = modified_pdf.getvalue()
-            st.download_button(
-            label="Download Certificate",
-            data=pdf_data,
-            file_name="modified_certificate.pdf",
-            mime="application/pdf",
+            pdf_base64 = base64.b64encode(pdf_data).decode("utf-8")
+            st.markdown(
+                f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="700" height="500"></iframe>',
+                unsafe_allow_html=True,
             )
 
         # Save Coordinates Button
@@ -206,7 +197,7 @@ elif menu == "Certificate Generation and Sending":
     #font_size = st.slider("Font Size", 10, 50, 26)
 
     # Output Directory
-    output_directory = "./generated certs"
+    output_directory = st.text_input("Enter the path where to save the genearted certificates in your System(Path Should be in the format (C:/users/Desktop)", "")
 
     if st.button("Generate Certificates and Send Emails"):
         if not participant_data or not certificate_template or not sender_email or not sender_password:
@@ -255,7 +246,7 @@ elif menu == "Certificate Generation and Sending":
                             personalized_message, f"{email[:-6]}.pdf", output_directory
                         )
                         k.email_send()
-                        
+
                     except Exception as e:
                         st.warning(f"Failed to send email to {email}")
 
@@ -272,4 +263,3 @@ elif(menu=="Help"):
     st.write("Your Mails are now being generated and are being saved in the loaction you have given and are being sent to those Mails.")
     st.write("If any Email is not sent You will see that mail id below there itself.")
     st.write("If any error occurs then Error will get Displayed. You can try again by refreshing the site!!!")
-    st.write("If any issue please contact to v647414@gmail.com")
