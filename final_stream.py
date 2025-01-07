@@ -283,3 +283,4 @@ elif(menu=="Help"):
     st.write("Your Mails are now being generated and are being saved in the loaction you have given and are being sent to those Mails.")
     st.write("If any Email is not sent You will see that mail id below there itself.")
     st.write("If any error occurs then Error will get Displayed. You can try again by refreshing the site!!!")
+    st.write("If any issues You can contact to v647414@gmail.com")
