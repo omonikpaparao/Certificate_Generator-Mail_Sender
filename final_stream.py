@@ -255,18 +255,7 @@ elif menu == "Certificate Generation and Sending":
                             personalized_message, f"{email[:-6]}.pdf", output_directory
                         )
                         k.email_send()
-                        zip_filename = "generated_certs.zip"
-                        zip_folder(output_directory, zip_filename)
-
-                        # Provide download button for the zipped folder
-                        with open(zip_filename, "rb") as f:
-                            st.download_button(
-                                label="Download All Certificates (ZIP)",
-                                data=f,
-                                file_name=zip_filename,
-                                mime="application/zip"
-                            )
-
+                        
                     except Exception as e:
                         st.warning(f"Failed to send email to {email}")
 
@@ -283,4 +272,4 @@ elif(menu=="Help"):
     st.write("Your Mails are now being generated and are being saved in the loaction you have given and are being sent to those Mails.")
     st.write("If any Email is not sent You will see that mail id below there itself.")
     st.write("If any error occurs then Error will get Displayed. You can try again by refreshing the site!!!")
-    st.write("If any issues You can contact to v647414@gmail.com")
+    st.write("If any issue please contact to v647414@gmail.com")
