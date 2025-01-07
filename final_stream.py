@@ -117,14 +117,14 @@ if menu == "Set Up Coordinates":
                 font_size,
             )
 
-        st.write("### Download Modified Certificate")
-        pdf_data = modified_pdf.getvalue()
-        st.download_button(
-        label="Download Certificate",
-        data=pdf_data,
-        file_name="modified_certificate.pdf",
-        mime="application/pdf",
-        )
+            st.write("### Download Modified Certificate")
+            pdf_data = modified_pdf.getvalue()
+            st.download_button(
+            label="Download Certificate",
+            data=pdf_data,
+            file_name="modified_certificate.pdf",
+            mime="application/pdf",
+            )
 
         # Save Coordinates Button
         if st.button("Save Coordinates"):
