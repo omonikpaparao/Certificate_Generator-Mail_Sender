@@ -1,4 +1,4 @@
-source /home/adminuser/venv/bin/activate
+streamlit
 pandas
 PyPDF2
 reportlab
