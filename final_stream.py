@@ -44,25 +44,29 @@ def create_sample_pdf(name, x, y, font_name="Helvetica", font_size=12, page_widt
     return buffer
 
 # Function to overlay text on an existing PDF and return the modified PDF
-def overlay_text_on_pdf(base_pdf, name, x, y, font_name, font_size):
-    reader = PdfReader(base_pdf)
-    page = reader.pages[0]
-    page_width = float(page.mediabox.right)
-    page_height = float(page.mediabox.top)
+def overlay_text_on_pdf(input_pdf_path, output_pdf_path, text, x, y, font_name, font_size):
+    # Create a new PDF with ReportLab to overlay text
+    packet = BytesIO()
+    can = canvas.Canvas(packet)
+    can.setFont(font_name, font_size)
+    can.drawString(x, y, text)
+    can.save()
+    packet.seek(0)
 
-    # Create a temporary overlay PDF
-    overlay_buffer = create_sample_pdf(name, x, y, font_name, font_size, page_width, page_height)
-
-    # Merge the overlay with the original PDF
-    overlay_reader = PdfReader(overlay_buffer)
-    page.merge_page(overlay_reader.pages[0])
-
+    # Read the input PDF
+    reader = PdfReader(input_pdf_path)
     writer = PdfWriter()
-    output_buffer = BytesIO()
-    writer.add_page(page)
-    writer.write(output_buffer)
-    output_buffer.seek(0)
-    return output_buffer
+
+    # Overlay the generated text onto the first page of the input PDF
+    overlay = PdfReader(packet)
+    for i, page in enumerate(reader.pages):
+        if i == 0:  # Apply overlay only to the first page
+            page.merge_page(overlay.pages[0])
+        writer.add_page(page)
+
+    # Write the modified PDF to the output file
+    with open(output_pdf_path, "wb") as output_file:
+        writer.write(output_file)
 
 # Streamlit Sidebar Menu
 st.sidebar.title("Navigation")
@@ -72,51 +76,57 @@ if "saved_coordinates" not in st.session_state:
     st.session_state.saved_coordinates = {}
 
 if menu == "Set Up Coordinates":
-    # Set Up Coordinates Section
     st.title("Set Up Coordinates for Certificate")
-    st.write("Upload a sample certificate and adjust the position of the participant's name or other attributes.")
+    st.write("Upload a new certificate, adjust coordinates, and save the changes to `sample_pdf.pdf`.")
 
-    # Upload Sample Certificate
-    sample_certificate = st.file_uploader("Upload a Sample Certificate (PDF)", type=["pdf"])
+    # File path for the sample PDF
+    sample_pdf_path = "sample_pdf.pdf"  # Ensure this file exists in the same directory
 
-    if sample_certificate:
+    # Show the existing sample PDF
+    #st.write("### Current Sample Certificate (Preview)")
+    with open(sample_pdf_path, "rb") as file:
+        sample_pdf_data = file.read()
+    sample_pdf_base64 = base64.b64encode(sample_pdf_data).decode("utf-8")
+    
+
+    # Upload a new certificate
+    uploaded_certificate = st.file_uploader("Upload a Certificate (PDF) to Replace the Sample", type=["pdf"])
+
+    # Allow the user to adjust coordinates and overlay text
+    st.write("### Adjust the position of the text using the sliders below.")
+    attribute_name = st.text_input("Enter the attribute you are setting up (e.g., Name):", "")
+    value_name = st.text_input("Enter the value of that attribute (e.g., Participant Name):", "")
+    font_name = st.text_input("Font Name:", "Times-BoldItalic")
+    font_size = st.slider("Font Size:", 10, 50, 26)
+    x_position = st.slider("X Coordinate:", 0, 600, 200)
+    y_position = st.slider("Y Coordinate:", 0, 800, 400)
+
+    # Automatically update preview if all inputs are provided
+    if uploaded_certificate and attribute_name and value_name:
         # Save uploaded certificate temporarily
-        with open("sample_template.pdf", "wb") as f:
-            f.write(sample_certificate.read())
+        temp_pdf_path = "temp_certificate.pdf"
+        with open(temp_pdf_path, "wb") as f:
+            f.write(uploaded_certificate.read())
 
-        st.write("Adjust the position of the selected attribute using the sliders below.")
+        # Overlay text on the uploaded certificate and save it as `sample_pdf.pdf`
+        overlay_text_on_pdf(
+            temp_pdf_path,
+            sample_pdf_path,
+            value_name,
+            x_position,
+            y_position,
+            font_name,
+            font_size,
+        )
 
-        # Attribute Input
-        attribute_name = st.text_input("Enter the attribute you are setting up (e.g., Name):", "")
-        value_name=st.text_input("Enter the value of that attribute(Better to try with longest value:","")
-
-        # Coordinate Inputs
-        font_name = st.text_input("Font Name:", "Times-BoldItalic")
-        st.write("Move the Sliders below to view the Preview")
-        font_size = st.slider("Font Size:", 10, 50, 26)
-        x_position = st.slider("X Coordinate:", 0, 600, 200)
-        y_position = st.slider("Y Coordinate:", 0, 800, 400)
-        
-
-        # Generate Preview
-        if attribute_name:
-            modified_pdf = overlay_text_on_pdf(
-                "sample_template.pdf",
-                value_name,
-                x_position,
-                y_position,
-                font_name,
-                font_size,
-            )
-
-            st.write("### Preview of Certificate")
-            pdf_data = modified_pdf.getvalue()
-            pdf_base64 = base64.b64encode(pdf_data).decode("utf-8")
-            st.markdown(
-                f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="700" height="500"></iframe>',
-                unsafe_allow_html=True,
-            )
-
+        st.write("### Updated Sample Certificate (Preview)")
+        with open(sample_pdf_path, "rb") as file:
+            updated_pdf_data = file.read()
+        updated_pdf_base64 = base64.b64encode(updated_pdf_data).decode("utf-8")
+        st.markdown(
+            f'<iframe src="data:application/pdf;base64,{updated_pdf_base64}" width="700" height="500"></iframe>',
+            unsafe_allow_html=True,
+        )
         # Save Coordinates Button
         if st.button("Save Coordinates"):
             if attribute_name:
