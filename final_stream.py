@@ -80,7 +80,7 @@ if menu == "Set Up Coordinates":
     st.write("Upload a new certificate, adjust coordinates, and save the changes to `sample_pdf.pdf`.")
 
     # File path for the sample PDF
-    sample_pdf_path = "./sample_pdf.pdf"  # Ensure this file exists in the same directory
+    sample_pdf_path = "sample_pdf.pdf"  # Ensure this file exists in the same directory
 
     # Show the existing sample PDF
     #st.write("### Current Sample Certificate (Preview)")
