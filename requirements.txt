@@ -1,3 +1,4 @@
+source /home/adminuser/venv/bin/activate
 pandas
 PyPDF2
 reportlab
