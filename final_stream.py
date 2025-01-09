@@ -134,8 +134,8 @@ if menu == "Set Up Coordinates":
             pdf_data = modified_pdf.getvalue()
             pdf_base64 = base64.b64encode(pdf_data).decode("utf-8")
             st.markdown(
-                f'<iframe src="data:application/pdf;base64,{pdf_base64}" width="700" height="500"></iframe>',
-                unsafe_allow_html=True,
+            f'<embed src="data:application/pdf;base64,{pdf_base64}" type="application/pdf" width="700" height="500">',
+            unsafe_allow_html=True
             )
 
         # Save Coordinates Button
