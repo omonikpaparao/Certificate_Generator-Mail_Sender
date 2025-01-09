@@ -7,6 +7,7 @@ import pandas as pd
 from PyPDF2 import PdfWriter, PdfReader
 from pdf_mail import sendpdf
 import os
+import numpy as np
 
 def create_text_pdf(text_list, filename, font_name="Helvetica", font_size=12, page_width=612, page_height=792):
     c = canvas.Canvas(filename, pagesize=(page_width, page_height))
@@ -78,7 +79,27 @@ if menu == "Set Up Coordinates":
 
     # Upload Sample Certificate
     sample_certificate = st.file_uploader("Upload a Sample Certificate (PDF)", type=["pdf"])
+    participant_data = st.file_uploader("Upload Participant Data (Excel) to get suggestion of longest value of each column", type=["xlsx"])
+    if participant_data:
+        # Load participant data to get attribute names
+        data = pd.read_excel(participant_data)
+        column_names = data.columns.tolist()
 
+        # Remove "Mail" attribute from column names
+        if "Mail" in column_names:
+            column_names.remove("Mail")
+        #maarpu
+        longest={}
+        for x in column_names:
+            a=np.array(data[x])
+            try:
+                if(type(a[0])==type("college")):
+                    b=list(map(lambda y:len(y),a))
+                    l=max(b)
+                    longest[x]=a[b.index(l)]
+            except:
+                st.write("Excel Sheet has an issue of Data Missing i.e. every column of every row is not filled properly")
+        st.write(longest)
     if sample_certificate:
         # Save uploaded certificate temporarily
         with open("sample_template.pdf", "wb") as f:
@@ -88,7 +109,7 @@ if menu == "Set Up Coordinates":
 
         # Attribute Input
         attribute_name = st.text_input("Enter the attribute you are setting up (e.g., Name):", "")
-        value_name=st.text_input("Enter the value of that attribute(Better to try with longest value:","")
+        value_name=st.text_input("Enter the value of that attribute(Better to try with longest value as suggested above):","")
 
         # Coordinate Inputs
         font_name = st.text_input("Font Name:", "Times-BoldItalic")
@@ -182,6 +203,17 @@ elif menu == "Certificate Generation and Sending":
         # Remove "Mail" attribute from column names
         if "Mail" in column_names:
             column_names.remove("Mail")
+        #maarpu
+        longest={}
+        for x in column_names:
+            a=np.array(data[x])
+            try:
+                if(type(a[0])==type("college")):
+                    b=list(map(lambda y:len(y),a))
+                    l=max(b)
+                    longest[x]=l
+            except:
+                st.write("Excel Sheet has an issue of Data Missing i.e. every column of every row is not filled properly")
 
         # Display input fields for X and Y coordinates for each attribute (except "Mail")
         coordinates = {}
@@ -225,7 +257,8 @@ elif menu == "Certificate Generation and Sending":
                             if column in coordinates:
                                 text = row[column]
                                 text_list.append({
-                                    "text": str(text),
+                                    #maarpu
+                                    "text": (str(text).title()).center(longest[column]),
                                     "x": coordinates[column]["x"],
                                     "y": coordinates[column]["y"],
                                     "font_name": font_name,
