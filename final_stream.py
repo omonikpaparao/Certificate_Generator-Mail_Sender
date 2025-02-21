@@ -9,6 +9,13 @@ from pdf_mail import sendpdf
 import os
 import numpy as np
 
+def save_to_excel(data):
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='openpyxl') as writer:
+        data.to_excel(writer, index=False, sheet_name='Failed Emails')
+    processed_data = output.getvalue()
+    return processed_data
+
 def create_text_pdf(text_list, filename, font_name="Helvetica", font_size=12, page_width=612, page_height=792):
     c = canvas.Canvas(filename, pagesize=(page_width, page_height))
     c.setFont(font_name, font_size)
@@ -129,14 +136,14 @@ if menu == "Set Up Coordinates":
                 font_name,
                 font_size,
             )
-
-            st.write("### Preview of Certificate")
             pdf_data = modified_pdf.getvalue()
-            pdf_base64 = base64.b64encode(pdf_data).decode("utf-8")
-            st.markdown(
-            f'<embed src="data:application/pdf;base64,{pdf_base64}" type="application/pdf" width="700" height="500">',
-            unsafe_allow_html=True
-            )
+            st.write("### Download Certificate")
+            st.download_button(
+            label="Download Certificate",
+            data=pdf_data,
+            file_name="certificate.pdf",
+             mime="application/pdf"
+            )           
 
         # Save Coordinates Button
         if st.button("Save Coordinates"):
@@ -185,7 +192,6 @@ elif menu == "Certificate Generation and Sending":
     participant_data = st.file_uploader("Upload Participant Data (Excel)", type=["xlsx"])
     certificate_template = st.file_uploader("Upload Certificate Template (PDF)", type=["pdf"])
 
-    # Email Credentials and Content
     sender_email = st.text_input("Sender Email")
     st.markdown("[Click here to know the setting of App Password to your G-Mail](https://youtu.be/MkLX85XU5rU?si=xhs78FRrWIPF0FGL)")
     sender_password = st.text_input("Sender Email App Security Key", type="password")
@@ -196,40 +202,34 @@ elif menu == "Certificate Generation and Sending":
     )
 
     if participant_data:
-        # Load participant data to get attribute names
         data = pd.read_excel(participant_data)
         column_names = data.columns.tolist()
 
-        # Remove "Mail" attribute from column names
         if "Mail" in column_names:
             column_names.remove("Mail")
-        #maarpu
-        longest={}
+
+        longest = {}
         for x in column_names:
-            a=np.array(data[x])
+            a = np.array(data[x])
             try:
-                if(type(a[0])==type("college")):
-                    b=list(map(lambda y:len(y),a))
-                    l=max(b)
-                    longest[x]=l
+                if type(a[0]) == type("college"):
+                    b = list(map(lambda y: len(y), a))
+                    l = max(b)
+                    longest[x] = l
             except:
                 st.write("Excel Sheet has an issue of Data Missing i.e. every column of every row is not filled properly")
 
-        # Display input fields for X and Y coordinates for each attribute (except "Mail")
         coordinates = {}
         for column in column_names:
             st.write(f"Enter X and Y coordinates for {column}")
             x_coord = st.number_input(f"X Coordinate for {column}", value=197)
             y_coord = st.number_input(f"Y Coordinate for {column}", value=334)
-            font_name=st.number_input(f"Font Size for {column}",value=20)
-            coordinates[column] = {"x": x_coord, "y": y_coord, "font":font_name}
+            font_name = st.number_input(f"Font Size for {column}", value=20)
+            coordinates[column] = {"x": x_coord, "y": y_coord, "font": font_name}
 
-    # Certificate Generation Settings
     font_name = st.text_input("Font Name", "Times-BoldItalic")
-    #font_size = st.slider("Font Size", 10, 50, 26)
-
-    # Output Directory
-    output_directory = st.text_input("Enter the path where to save the genearted certificates in your System(Path Should be in the format (C:/users/Desktop)", "")
+    output_directory = "C:/Users/exam2/Desktop/phani"
+    failed_emails = []
 
     if st.button("Generate Certificates and Send Emails"):
         if not participant_data or not certificate_template or not sender_email or not sender_password:
@@ -237,27 +237,20 @@ elif menu == "Certificate Generation and Sending":
         else:
             try:
                 st.write("Generation and Sending Mails are Running...........")
-                # Create output directory if it doesn't exist
-                os.makedirs(output_directory, exist_ok=True)
-
-                # Save certificate template locally
                 with open("template.pdf", "wb") as f:
                     f.write(certificate_template.read())
 
-                # Generate certificates and send emails for each participant
                 for i, row in data.iterrows():
                     try:
                         name = row["Name"].title()
                         email = row["Mail"]
                         output_pdf = os.path.join(output_directory, f"{email[:-6]}.pdf.pdf")
 
-                        # Prepare text list based on the coordinates entered by the user
                         text_list = []
                         for column in column_names:
                             if column in coordinates:
                                 text = row[column]
                                 text_list.append({
-                                    #maarpu
                                     "text": (str(text).title()).center(longest[column]),
                                     "x": coordinates[column]["x"],
                                     "y": coordinates[column]["y"],
@@ -265,15 +258,12 @@ elif menu == "Certificate Generation and Sending":
                                     "font_size": coordinates[column]["font"]
                                 })
 
-                        # Add text to the certificate
                         add_text_to_pdf("template.pdf", text_list, output_pdf)
 
-                        # Prepare email message
                         personalized_message = (
                             f"Hey {name.title()}!!!\n\n" + email_body
                         )
 
-                        # Send email with the certificate
                         k = sendpdf(
                             sender_email, email, sender_password, email_subject,
                             personalized_message, f"{email[:-6]}.pdf", output_directory
@@ -281,9 +271,16 @@ elif menu == "Certificate Generation and Sending":
                         k.email_send()
 
                     except Exception as e:
-                        st.warning(f"Failed to send email to {email}")
+                        #st.warning(f"Failed to send email to {email}")
+                        failed_emails.append(row)
 
-                st.success("Certificates generated and emails sent successfully!")
+                if failed_emails:
+                    failed_df = pd.DataFrame(failed_emails)
+                    failed_excel = save_to_excel(failed_df)
+                    st.download_button(label="Download Failed Emails Excel", data=failed_excel,
+                                       file_name="failed_emails.xlsx", mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+
+                st.success("Program Completed!!!")
             except Exception as e:
                 st.error(f"An error occurred: {e}")
 elif(menu=="Help"):
