@@ -250,12 +250,8 @@ elif menu == "Certificate Generation and Sending":
                         for column in column_names:
                             if column in coordinates:
                                 text = row[column]
-                                if(column=="Roll"):
-                                    pradeep=(str(text).upper()).center(longest[column])
-                                else:
-                                    pradeep=(str(text).title()).center(longest[column])
                                 text_list.append({
-                                    "text": pradeep,
+                                    "text": str(text).center(longest[column]),
                                     "x": coordinates[column]["x"],
                                     "y": coordinates[column]["y"],
                                     "font_name": font_name,
